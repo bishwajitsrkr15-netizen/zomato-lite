@@ -1,9 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  /* This tiny app reads route params and lives on runtime data.
+     Next 16's new prerender pipeline wants Suspense boundaries around
+     all of that — we opt out of Cache Components instead. */
+  cacheComponents: false,
   turbopack: {
     rules: {
       "*.css": {

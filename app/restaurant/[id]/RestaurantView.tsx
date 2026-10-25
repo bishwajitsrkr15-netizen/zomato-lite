@@ -44,17 +44,21 @@ export default function RestaurantView({ id }: { id: string }) {
   // One call, one shape. The API returns exactly what this screen shows:
   // name -> big average -> latest review -> older list. No sorting, no maths.
   useEffect(() => {
-    fetch(`/api/restaurants/${id}`)
-      .then((res) => res.json())
-      .then((json) => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`/api/restaurants/${id}`);
+        const json = await res.json();
         if (!res.ok) {
           setError(json.error ?? "Something went wrong");
           setData(null);
           return;
         }
         setData(json);
-      })
-      .catch(() => setError("Could not reach the server."));
+      } catch {
+        setError("Could not reach the server.");
+      }
+    };
+    fetchData();
   }, [id]);
 
   if (error) {
