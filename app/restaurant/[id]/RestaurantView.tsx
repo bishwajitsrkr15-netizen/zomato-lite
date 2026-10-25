@@ -44,6 +44,16 @@ function initialsOf(name: string) {
     .join("");
 }
 
+/* Dish photos, shipped as static frontend assets (public/food/).
+   Mapping by review id is visual garnish only — not stored data,
+   and NOT a statement that the reviewer ate exactly this dish. */
+const DISH_IMAGES = [
+  "/food/dish-burrito-half.jpg",
+  "/food/dish-burrito-plate.jpg",
+  "/food/dish-paneer.jpg",
+  "/food/dish-kadai-paneer.jpg",
+];
+
 function Skeleton() {
   return (
     <main className="mx-auto min-h-screen max-w-[560px] px-5 pt-5" aria-hidden="true">
@@ -131,13 +141,15 @@ export default function RestaurantView({ id }: { id: string }) {
       {/* Hero card: background image banner with initials, facts below on the card */}
       <section className="overflow-hidden rounded-2xl border border-border bg-card">
         <div
-          className="relative h-44 bg-accent [background-image:url(/restaurant-hero.svg)] [background-size:cover] [background-position:center]"
+          className="relative h-44 [background-image:url(/food/hero.jpg)] [background-size:cover] [background-position:center]"
           role="img"
           aria-label={`${data.name} banner`}
         >
+          {/* Dark scrim so the initials stay readable on any photo */}
+          <div className="absolute inset-0 bg-black/30" aria-hidden="true" />
           <span
             className="absolute bottom-5 left-5 text-5xl font-extrabold tracking-tight text-white"
-            style={{ textShadow: "0 2px 14px rgba(0,0,0,0.35)" }}
+            style={{ textShadow: "0 2px 14px rgba(0,0,0,0.45)" }}
           >
             {initials}
           </span>
@@ -179,7 +191,16 @@ export default function RestaurantView({ id }: { id: string }) {
                   <RatingSquare value={data.latestReview.rating} />
                   <span className="text-xs text-muted">{timeAgo(data.latestReview.createdAt)}</span>
                 </div>
-                <p className="mt-4 leading-relaxed">{data.latestReview.comment}</p>
+                <div className="mt-4 flex items-start gap-4">
+                  <p className="flex-1 leading-relaxed">{data.latestReview.comment}</p>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={DISH_IMAGES[data.latestReview.id % DISH_IMAGES.length]}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-24 w-28 shrink-0 rounded-lg border border-border object-cover"
+                  />
+                </div>
               </section>
             </>
           )}
@@ -200,7 +221,16 @@ export default function RestaurantView({ id }: { id: string }) {
                       <RatingSquare value={review.rating} />
                       <span className="text-xs text-muted">{timeAgo(review.createdAt)}</span>
                     </div>
-                    <p className="mt-4 leading-relaxed">{review.comment}</p>
+                    <div className="mt-4 flex items-start gap-4">
+                      <p className="flex-1 leading-relaxed">{review.comment}</p>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={DISH_IMAGES[review.id % DISH_IMAGES.length]}
+                        alt=""
+                        aria-hidden="true"
+                        className="h-20 w-24 shrink-0 rounded-lg border border-border object-cover"
+                      />
+                    </div>
                   </li>
                 ))}
               </ul>
