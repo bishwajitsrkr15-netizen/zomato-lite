@@ -28,12 +28,23 @@ function formatDate(iso: string) {
   });
 }
 
-/* Rendering only: filled/empty star glyphs for a 1-5 value. Not a calculation. */
+/* A single five-pointed star, drawn as crisp SVG (not a font glyph).
+   Color comes from the parent className via currentColor. */
+function Star({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true" fill="currentColor">
+      <path d="M12 2.5c.3 0 .6.2.75.5l2.55 5.15 5.7.83c.7.1.98.96.47 1.46l-4.12 4.02.97 5.68c.12.7-.61 1.23-1.24.9L12 18.43l-5.08 2.61c-.63.33-1.36-.2-1.24-.9l.97-5.68-4.12-4.02c-.51-.5-.23-1.36.47-1.46l5.7-.83L11.25 3c.15-.3.45-.5.75-.5Z" />
+    </svg>
+  );
+}
+
+/* Rendering only: filled/empty stars for a 1-5 value. Not a calculation. */
 function Stars({ value, className = "" }: { value: number; className?: string }) {
   return (
-    <span className={className} aria-label={`${value} out of 5`}>
-      <span className="text-accent">{"\u2605".repeat(value)}</span>
-      <span className="text-accent/25">{"\u2605".repeat(5 - value)}</span>
+    <span className={`inline-flex items-center gap-0.5 ${className}`} aria-label={`${value} out of 5`}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star key={star} className={star <= value ? "text-accent" : "text-accent/20"} />
+      ))}
     </span>
   );
 }
@@ -99,7 +110,10 @@ export default function RestaurantView({ id }: { id: string }) {
 
   return (
     <main className="mx-auto min-h-screen max-w-[560px] px-6 pb-24 pt-12 sm:pt-20">
-      <Link href="/" className="text-sm text-muted transition-colors hover:text-foreground">
+      <Link
+        href="/"
+        className="text-sm text-muted transition-colors hover:text-accent"
+      >
         &larr; All restaurants
       </Link>
 
@@ -112,24 +126,28 @@ export default function RestaurantView({ id }: { id: string }) {
           {/* 2. Average rating — the biggest thing on the page. Printed, not computed. */}
           <div className="mt-10 flex items-baseline gap-1">
             {/* THE LINE: {data.averageRating} — the backend handed us 4.5 and we print 4.5. */}
-            <span className="text-6xl font-semibold tracking-tight sm:text-7xl">
+            <span className="text-6xl font-semibold tracking-tight text-accent sm:text-7xl">
               {data.averageRating}
             </span>
             <span className="text-xl text-muted">/ 5</span>
           </div>
-          <div className="mt-3 text-sm text-muted">
+          <p className="mt-3 text-sm text-muted">
             {data.totalReviews} review{data.totalReviews === 1 ? "" : "s"}
-          </div>
+          </p>
 
           {/* 3. Latest review — visually set apart, because recency is what people trust */}
           {data.latestReview && (
-            <section className="mt-10 rounded-xl bg-card p-6">
-              <p className="text-xs font-medium uppercase tracking-widest text-muted">
+            <section className="relative mt-10 rounded-xl bg-card p-6 pl-7">
+              <span
+                className="absolute left-0 top-6 bottom-6 w-[3px] rounded-full bg-accent"
+                aria-hidden="true"
+              />
+              <p className="text-xs font-medium uppercase tracking-widest text-accent">
                 Latest review
               </p>
               <p className="mt-4 text-lg leading-relaxed">{data.latestReview.comment}</p>
               <div className="mt-4 flex items-center gap-2">
-                <Stars value={data.latestReview.rating} className="text-sm" />
+                <Stars value={data.latestReview.rating} className="text-sm [&_svg]:h-4 [&_svg]:w-4" />
                 <span className="text-xs text-muted">
                   &middot; {formatDate(data.latestReview.createdAt)}
                 </span>
@@ -140,7 +158,7 @@ export default function RestaurantView({ id }: { id: string }) {
           {/* 4. Older reviews, newest first, plain list */}
           {data.reviews.length > 0 && (
             <section className="mt-10">
-              <h2 className="text-xs font-medium uppercase tracking-widest text-muted">
+              <h2 className="text-xs font-medium uppercase tracking-widest text-accent">
                 Older reviews
               </h2>
               <ul className="mt-2 divide-y divide-border">
@@ -148,8 +166,9 @@ export default function RestaurantView({ id }: { id: string }) {
                   <li key={review.id} className="py-5">
                     <p className="leading-relaxed">{review.comment}</p>
                     <div className="mt-3 flex items-center gap-2">
-                      <span className="rounded-full border border-border px-2.5 py-1 text-xs text-muted">
-                        {review.rating} / 5
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent">
+                        <Star className="h-3 w-3" />
+                        {review.rating}
                       </span>
                       <span className="text-xs text-muted">{formatDate(review.createdAt)}</span>
                     </div>
@@ -161,14 +180,14 @@ export default function RestaurantView({ id }: { id: string }) {
         </>
       ) : (
         /* 5. Empty state — no facts yet, nothing to render, invite the first review */
-        <section className="mt-12 rounded-xl border border-dashed border-border p-10 text-center">
+        <section className="mt-12 rounded-xl border border-dashed border-accent/40 p-10 text-center">
           <p className="text-base font-medium">No reviews yet</p>
           <p className="mx-auto mt-2 max-w-[32ch] text-sm text-muted">
             This place is waiting for its first review. Yours would set the tone.
           </p>
           <Link
             href={`/review/${id}`}
-            className="mt-6 inline-block rounded-md bg-accent px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
+            className="mt-6 inline-block rounded-md bg-accent px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-deep"
           >
             Write the first review
           </Link>
@@ -179,7 +198,7 @@ export default function RestaurantView({ id }: { id: string }) {
       {hasReviews && (
         <Link
           href={`/review/${id}`}
-          className="mt-12 inline-block rounded-md bg-accent px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
+          className="mt-12 inline-block rounded-md bg-accent px-6 py-3.5 text-sm font-medium text-white transition-colors hover:bg-accent-deep"
         >
           Write a review
         </Link>

@@ -6,19 +6,28 @@ import { useEffect, useState } from "react";
 
 type Phase = "loading" | "notfound" | "ready" | "submitting" | "done";
 
+/* A single five-pointed star, drawn as crisp SVG (not a font glyph).
+   Color comes from the button's className via currentColor. */
+function Star({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true" fill="currentColor">
+      <path d="M12 2.5c.3 0 .6.2.75.5l2.55 5.15 5.7.83c.7.1.98.96.47 1.46l-4.12 4.02.97 5.68c.12.7-.61 1.23-1.24.9L12 18.43l-5.08 2.61c-.63.33-1.36-.2-1.24-.9l.97-5.68-4.12-4.02c-.51-.5-.23-1.36.47-1.46l5.7-.83L11.25 3c.15-.3.45-.5.75-.5Z" />
+    </svg>
+  );
+}
+
 export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("loading");
   const [restaurantName, setRestaurantName] = useState("");
-  const [ subTitle, setSubTitle ] = useState("");
+  const [subTitle, setSubTitle] = useState("");
 
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // Better integration, part 1: the form introduces the restaurant it is
-  // reviewing — fetched from the same API the restaurant page uses.
+  // The form introduces the restaurant it is reviewing — same API as the page.
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/restaurants/${restaurantId}`)
@@ -56,8 +65,8 @@ export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
         }),
       });
       if (res.ok) {
-        // Better integration, part 2: say thanks, then hand the user to the
-        // page that recomputes the average from the fact we just wrote.
+        // Say thanks, then hand the user to the page that recomputes the
+        // average from the fact we just wrote.
         setPhase("done");
         setTimeout(() => router.push(`/restaurant/${restaurantId}`), 900);
         return;
@@ -89,10 +98,11 @@ export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
   if (phase === "done") {
     return (
       <main className="mx-auto flex min-h-screen max-w-[560px] flex-col items-center justify-center px-6 text-center">
-        <p className="text-2xl font-semibold tracking-tight">Thank you.</p>
-        <p className="mt-3 text-sm text-muted">
-          Your review is saved. The ratings are being recalculated
-          &mdash; from facts, every time, without anyone keeping a score.
+        <Star className="h-8 w-8 text-accent" />
+        <p className="mt-4 text-2xl font-semibold tracking-tight">Thank you.</p>
+        <p className="mt-3 max-w-[36ch] text-sm text-muted">
+          Your review is saved. The ratings are recalculated from facts, every time
+          &mdash; without anyone keeping a score.
         </p>
       </main>
     );
@@ -109,7 +119,6 @@ export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
     );
   }
 
-  const ready = phase === "ready" || phase === "submitting";
   const canSubmit = rating > 0 && comment.trim().length > 0 && phase === "ready";
   const shown = hoverRating || rating;
 
@@ -117,7 +126,7 @@ export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
     <main className="mx-auto min-h-screen max-w-[560px] px-6 pb-24 pt-12 sm:pt-20">
       <Link
         href={`/restaurant/${restaurantId}`}
-        className="text-sm text-muted transition-colors hover:text-foreground"
+        className="text-sm text-muted transition-colors hover:text-accent"
       >
         &larr; Back to restaurant
       </Link>
@@ -127,10 +136,10 @@ export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
 
       <form onSubmit={handleSubmit} className="mt-10">
         <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-widest text-muted">
+          <legend className="text-xs font-medium uppercase tracking-widest text-accent">
             Your rating
           </legend>
-          <div className="mt-3 flex gap-1.5" onMouseLeave={() => setHoverRating(0)}>
+          <div className="mt-3 flex gap-1" onMouseLeave={() => setHoverRating(0)}>
             {[1, 2, 3, 4, 5].map((value) => (
               <button
                 key={value}
@@ -138,22 +147,24 @@ export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
                 aria-label={`${value} star${value > 1 ? "s" : ""}`}
                 onClick={() => setRating(value)}
                 onMouseEnter={() => setHoverRating(value)}
-                className={`h-11 w-11 rounded-md text-2xl leading-none transition-colors ${
-                  value <= shown ? "text-accent" : "text-border hover:text-muted"
+                className={`p-1.5 transition-all ${
+                  value <= shown
+                    ? "text-accent scale-110"
+                    : "text-accent/25 hover:text-muted"
                 }`}
               >
-                &starf;
+                <Star className="h-8 w-8" />
               </button>
             ))}
           </div>
-          <p className="mt-2 h-5 text-sm text-muted" aria-live="polite">
+          <p className="mt-1.5 h-5 text-sm text-muted" aria-live="polite">
             {rating > 0 ? `You picked ${rating} of 5` : "Pick a star to begin"}
           </p>
         </fieldset>
 
         <label
           htmlFor="comment"
-          className="mt-6 block text-xs font-medium uppercase tracking-widest text-muted"
+          className="mt-6 block text-xs font-medium uppercase tracking-widest text-accent"
         >
           Your review
         </label>
@@ -167,7 +178,7 @@ export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
         />
 
         {error && (
-          <p className="mt-4 rounded-lg border border-border bg-card p-3 text-sm text-accent">
+          <p className="mt-4 rounded-lg border border-accent/30 bg-accent/5 p-3 text-sm text-accent">
             {error}
           </p>
         )}
@@ -176,9 +187,9 @@ export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
           type="submit"
           disabled={!canSubmit}
           title={canSubmit ? undefined : "Pick a rating and write something first"}
-          className="mt-8 w-full rounded-md bg-foreground py-3.5 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-25 sm:w-auto sm:px-10"
+          className="mt-8 w-full rounded-md bg-accent py-3.5 text-sm font-medium text-white transition-all hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-25 sm:w-auto sm:px-10"
         >
-          {!ready ? "Submitting\u2026" : "Submit review"}
+          {phase === "submitting" ? "Submitting\u2026" : "Submit review"}
         </button>
       </form>
     </main>

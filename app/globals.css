@@ -5,7 +5,8 @@
   --background: #faf9f7;
   --foreground: #1c1917;
   --muted: #78716c;
-  --accent: #c2410c;
+  --accent: #dc2626;
+  --accent-deep: #b91c1c;
   --card: #f4f2ee;
   --border: #e7e5e0;
 }
@@ -15,6 +16,7 @@
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
   --color-card: var(--card);
   --color-border: var(--border);
   --font-sans: var(--font-geist-sans);
