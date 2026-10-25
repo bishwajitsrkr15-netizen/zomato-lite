@@ -1,24 +1,38 @@
 @import "tailwindcss";
 
-/* Zomato Lite palette — restrained: off-white, near-black, one warm accent. */
+/* Zomato Lite — dark-first palette; add class "theme-light" on <html> for day mode. */
 :root {
+  --background: #131417;
+  --card: #1b1d21;
+  --border: #2b2e34;
+  --foreground: #f4f4f5;
+  --muted: #a1a5ad;
+  --accent: #dc2626;
+  --accent-deep: #ef4444;
+  --badge: #16a34a;
+}
+
+/* Day mode — same five layers, inverted. */
+.theme-light {
   --background: #faf9f7;
+  --card: #ffffff;
+  --border: #e7e5e0;
   --foreground: #1c1917;
   --muted: #78716c;
   --accent: #dc2626;
   --accent-deep: #b91c1c;
-  --card: #f4f2ee;
-  --border: #e7e5e0;
+  --badge: #16a34a;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-card: var(--card);
+  --color-border: var(--border);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-accent-deep: var(--accent-deep);
-  --color-card: var(--card);
-  --color-border: var(--border);
+  --color-badge: var(--badge);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

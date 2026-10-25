@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 240" width="800" height="240">
+  <defs>
+    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse">
+      <circle cx="5" cy="5" r="2.4" fill="#ffffff" opacity="0.13"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="240" fill="#b91c1c"/>
+  <rect width="800" height="240" fill="url(#dots)"/>
+  <!-- burrito, rolled and resting -->
+  <g transform="rotate(-20 400 130)" opacity="0.9">
+    <rect x="205" y="95" width="330" height="78" rx="39" fill="#7f1012"/>
+    <rect x="228" y="107" width="284" height="56" rx="28" fill="#8f1618"/>
+    <circle cx="205" cy="134" r="26" fill="#7f1012"/>
+    <circle cx="535" cy="134" r="26" fill="#7f1012"/>
+    <circle cx="530" cy="120" r="6" fill="#a63a28" opacity="0.9"/>
+    <circle cx="545" cy="140" r="4.5" fill="#a63a28" opacity="0.9"/>
+    <circle cx="525" cy="148" r="5" fill="#a63a28" opacity="0.9"/>
+  </g>
+  <!-- plate shadow -->
+  <ellipse cx="400" cy="215" rx="180" ry="14" fill="#6b0d0f" opacity="0.55"/>
+</svg>

@@ -20,44 +20,62 @@ type RestaurantData = {
   reviews: Review[];
 };
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+/* Presentation-only date-time rendering, same spirit as formatting a number. */
+function timeAgo(iso: string) {
+  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "yesterday";
+  if (days < 30) return `${days}d ago`;
+  return new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short" });
 }
 
-/* A single five-pointed star, drawn as crisp SVG (not a font glyph).
-   Color comes from the parent className via currentColor. */
-function Star({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden="true" fill="currentColor">
-      <path d="M12 2.5c.3 0 .6.2.75.5l2.55 5.15 5.7.83c.7.1.98.96.47 1.46l-4.12 4.02.97 5.68c.12.7-.61 1.23-1.24.9L12 18.43l-5.08 2.61c-.63.33-1.36-.2-1.24-.9l.97-5.68-4.12-4.02c-.51-.5-.23-1.36.47-1.46l5.7-.83L11.25 3c.15-.3.45-.5.75-.5Z" />
-    </svg>
-  );
-}
-
-/* Rendering only: filled/empty stars for a 1-5 value. Not a calculation. */
-function Stars({ value, className = "" }: { value: number; className?: string }) {
-  return (
-    <span className={`inline-flex items-center gap-0.5 ${className}`} aria-label={`${value} out of 5`}>
-      {[1, 2, 3, 4, 5].map((star) => (
-        <Star key={star} className={star <= value ? "text-accent" : "text-accent/20"} />
-      ))}
-    </span>
-  );
+/* Initials for the banner: "Ludhiana Burrito" -> "LB". Presentation logic. */
+function initialsOf(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0].toUpperCase())
+    .join("");
 }
 
 function Skeleton() {
   return (
-    <main className="mx-auto min-h-screen max-w-[560px] px-6 py-16 sm:py-24" aria-hidden="true">
-      <div className="h-9 w-2/3 animate-pulse rounded-md bg-border" />
-      <div className="mt-3 h-4 w-1/3 animate-pulse rounded-md bg-border" />
-      <div className="mt-12 h-16 w-24 animate-pulse rounded-md bg-border" />
-      <div className="mt-10 h-32 animate-pulse rounded-lg bg-border" />
-      <div className="mt-4 h-16 animate-pulse rounded-lg bg-border" />
+    <main className="mx-auto min-h-screen max-w-[560px] px-5 pt-5" aria-hidden="true">
+      <div className="h-44 animate-pulse rounded-2xl bg-border" />
+      <div className="mt-8 h-3 w-28 animate-pulse rounded bg-border" />
+      <div className="mt-3 h-28 animate-pulse rounded-2xl bg-border" />
+      <div className="mt-8 h-3 w-32 animate-pulse rounded bg-border" />
+      <div className="mt-3 h-24 animate-pulse rounded-2xl bg-border" />
     </main>
+  );
+}
+
+function RatingSquare({ value, size = "md" }: { value: number | null; size?: "md" | "lg" }) {
+  if (value == null) return null; // no facts yet -> nothing to average -> no badge
+  const box = size === "lg" ? "h-20 w-20 rounded-2xl" : "h-11 w-11 rounded-lg";
+  const text = size === "lg" ? "text-2xl" : "text-lg";
+  return (
+    <span
+      className={`flex ${box} shrink-0 flex-col items-center justify-center bg-badge text-white`}
+      aria-label={`Rated ${value} out of 5`}
+    >
+      <span className={`${text} font-bold leading-none`}>{value}</span>
+      {size === "lg" && <span className="mt-1 text-[10px] text-white/75">/ 5</span>}
+    </span>
+  );
+}
+
+function Chip({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="rounded-full bg-border/60 px-3.5 py-1.5 text-xs font-medium text-muted">
+      {children}
+    </span>
   );
 }
 
@@ -65,8 +83,7 @@ export default function RestaurantView({ id }: { id: string }) {
   const [data, setData] = useState<RestaurantData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // One call, one shape — the API response IS the screen's agenda:
-  // name -> big average -> latest review -> older list.
+  // One call, one shape — the API response IS the screen's agenda.
   useEffect(() => {
     let cancelled = false;
     const fetchData = async () => {
@@ -92,7 +109,7 @@ export default function RestaurantView({ id }: { id: string }) {
 
   if (error) {
     return (
-      <main className="mx-auto flex min-h-[80vh] max-w-[560px] flex-col justify-center px-6">
+      <main className="mx-auto flex min-h-[80vh] max-w-[560px] flex-col justify-center px-5">
         <p className="text-lg text-muted">{error}</p>
         <Link
           href="/"
@@ -107,102 +124,107 @@ export default function RestaurantView({ id }: { id: string }) {
   if (!data) return <Skeleton />;
 
   const hasReviews = data.totalReviews > 0;
+  const initials = initialsOf(data.name);
 
   return (
-    <main className="mx-auto min-h-screen max-w-[560px] px-6 pb-24 pt-12 sm:pt-20">
-      <Link
-        href="/"
-        className="text-sm text-muted transition-colors hover:text-accent"
-      >
-        &larr; All restaurants
-      </Link>
-
-      {/* 1. Name, with cuisine and area underneath in muted text */}
-      <h1 className="mt-8 text-3xl font-semibold tracking-tight sm:text-4xl">{data.name}</h1>
-      <p className="mt-2 text-sm text-muted">{data.cuisine} &middot; {data.area}</p>
+    <main className="mx-auto min-h-screen max-w-[560px] px-5 pb-32 pt-5">
+      {/* Hero card: background image banner with initials, facts below on the card */}
+      <section className="overflow-hidden rounded-2xl border border-border bg-card">
+        <div
+          className="relative h-44 bg-accent [background-image:url(/restaurant-hero.svg)] [background-size:cover] [background-position:center]"
+          role="img"
+          aria-label={`${data.name} banner`}
+        >
+          <span
+            className="absolute bottom-5 left-5 text-5xl font-extrabold tracking-tight text-white"
+            style={{ textShadow: "0 2px 14px rgba(0,0,0,0.35)" }}
+          >
+            {initials}
+          </span>
+        </div>
+        <div className="relative p-5">
+          <div className="absolute right-5 top-5">
+            {/* THE LINE: {data.averageRating} — received from the API, printed as-is. */}
+            <RatingSquare value={data.averageRating} size="lg" />
+          </div>
+          <h1 className="pr-24 text-2xl font-bold tracking-tight">{data.name}</h1>
+          <p className="mt-1 text-sm text-muted">{data.area}</p>
+          <div className="mt-3.5 flex flex-wrap gap-2">
+            <Chip>{data.cuisine}</Chip>
+            <Chip>Dine-in</Chip>
+          </div>
+          <p className="mt-3.5 text-xs text-muted">
+            Based on {data.totalReviews} review{data.totalReviews === 1 ? "" : "s"}
+          </p>
+        </div>
+      </section>
 
       {hasReviews ? (
         <>
-          {/* 2. Average rating — the biggest thing on the page. Printed, not computed. */}
-          <div className="mt-10 flex items-baseline gap-1">
-            {/* THE LINE: {data.averageRating} — the backend handed us 4.5 and we print 4.5. */}
-            <span className="text-6xl font-semibold tracking-tight text-accent sm:text-7xl">
-              {data.averageRating}
-            </span>
-            <span className="text-xl text-muted">/ 5</span>
-          </div>
-          <p className="mt-3 text-sm text-muted">
-            {data.totalReviews} review{data.totalReviews === 1 ? "" : "s"}
-          </p>
-
-          {/* 3. Latest review — visually set apart, because recency is what people trust */}
+          {/* Latest review, flagged like the reference */}
           {data.latestReview && (
-            <section className="relative mt-10 rounded-xl bg-card p-6 pl-7">
-              <span
-                className="absolute left-0 top-6 bottom-6 w-[3px] rounded-full bg-accent"
-                aria-hidden="true"
-              />
-              <p className="text-xs font-medium uppercase tracking-widest text-accent">
+            <>
+              <h2 className="mt-9 text-xs font-semibold uppercase tracking-[0.14em] text-muted">
                 Latest review
-              </p>
-              <p className="mt-4 text-lg leading-relaxed">{data.latestReview.comment}</p>
-              <div className="mt-4 flex items-center gap-2">
-                <Stars value={data.latestReview.rating} className="text-sm [&_svg]:h-4 [&_svg]:w-4" />
-                <span className="text-xs text-muted">
-                  &middot; {formatDate(data.latestReview.createdAt)}
+              </h2>
+              <section className="relative mt-4 rounded-2xl border border-border bg-card p-5">
+                <span
+                  className="absolute -top-2.5 left-6 rounded-full bg-badge px-3 py-1 text-[10px] font-bold tracking-widest text-white"
+                  aria-hidden="true"
+                >
+                  LATEST
                 </span>
-              </div>
-            </section>
+                <span className="absolute left-0 top-6 bottom-6 w-[3px] rounded-full bg-badge" aria-hidden="true" />
+                <div className="flex items-start justify-between">
+                  <RatingSquare value={data.latestReview.rating} />
+                  <span className="text-xs text-muted">{timeAgo(data.latestReview.createdAt)}</span>
+                </div>
+                <p className="mt-4 leading-relaxed">{data.latestReview.comment}</p>
+              </section>
+            </>
           )}
 
-          {/* 4. Older reviews, newest first, plain list */}
+          {/* Older reviews, newest first */}
           {data.reviews.length > 0 && (
-            <section className="mt-10">
-              <h2 className="text-xs font-medium uppercase tracking-widest text-accent">
-                Older reviews
+            <>
+              <h2 className="mt-9 text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+                Earlier reviews
               </h2>
-              <ul className="mt-2 divide-y divide-border">
+              <ul className="mt-4 space-y-3">
                 {data.reviews.map((review) => (
-                  <li key={review.id} className="py-5">
-                    <p className="leading-relaxed">{review.comment}</p>
-                    <div className="mt-3 flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent">
-                        <Star className="h-3 w-3" />
-                        {review.rating}
-                      </span>
-                      <span className="text-xs text-muted">{formatDate(review.createdAt)}</span>
+                  <li
+                    key={review.id}
+                    className="rounded-2xl border border-border bg-card p-5"
+                  >
+                    <div className="flex items-start justify-between">
+                      <RatingSquare value={review.rating} />
+                      <span className="text-xs text-muted">{timeAgo(review.createdAt)}</span>
                     </div>
+                    <p className="mt-4 leading-relaxed">{review.comment}</p>
                   </li>
                 ))}
               </ul>
-            </section>
+            </>
           )}
         </>
       ) : (
-        /* 5. Empty state — no facts yet, nothing to render, invite the first review */
-        <section className="mt-12 rounded-xl border border-dashed border-accent/40 p-10 text-center">
+        <section className="mt-10 rounded-2xl border border-dashed border-accent/40 p-10 text-center">
           <p className="text-base font-medium">No reviews yet</p>
           <p className="mx-auto mt-2 max-w-[32ch] text-sm text-muted">
             This place is waiting for its first review. Yours would set the tone.
           </p>
-          <Link
-            href={`/review/${id}`}
-            className="mt-6 inline-block rounded-md bg-accent px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-deep"
-          >
-            Write the first review
-          </Link>
         </section>
       )}
 
-      {/* 6. Closing call-to-action (hidden in the empty state, which has its own) */}
-      {hasReviews && (
+      {/* Fixed bottom CTA, always in reach on mobile */}
+      <div className="fixed inset-x-0 bottom-0 z-30 px-5 pb-4">
         <Link
           href={`/review/${id}`}
-          className="mt-12 inline-block rounded-md bg-accent px-6 py-3.5 text-sm font-medium text-white transition-colors hover:bg-accent-deep"
+          className="mx-auto block max-w-[520px] rounded-xl bg-accent py-4 text-center text-sm font-bold text-white shadow-lg shadow-black/30 transition-colors hover:bg-accent-deep"
         >
-          Write a review
+          {hasReviews ? "Write a Review" : "Be the first to review"}
         </Link>
-      )}
+      </div>
     </main>
   );
 }

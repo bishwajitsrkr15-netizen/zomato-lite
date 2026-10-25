@@ -6,21 +6,12 @@ import { useEffect, useState } from "react";
 
 type Phase = "loading" | "notfound" | "ready" | "submitting" | "done";
 
-/* A single five-pointed star, drawn as crisp SVG (not a font glyph).
-   Color comes from the button's className via currentColor. */
-function Star({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden="true" fill="currentColor">
-      <path d="M12 2.5c.3 0 .6.2.75.5l2.55 5.15 5.7.83c.7.1.98.96.47 1.46l-4.12 4.02.97 5.68c.12.7-.61 1.23-1.24.9L12 18.43l-5.08 2.61c-.63.33-1.36-.2-1.24-.9l.97-5.68-4.12-4.02c-.51-.5-.23-1.36.47-1.46l5.7-.83L11.25 3c.15-.3.45-.5.75-.5Z" />
-    </svg>
-  );
-}
+const MAX_COMMENT = 500;
 
 export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("loading");
   const [restaurantName, setRestaurantName] = useState("");
-  const [subTitle, setSubTitle] = useState("");
 
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -39,7 +30,6 @@ export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
           return;
         }
         setRestaurantName(json.name);
-        setSubTitle(`${json.cuisine} \u00B7 ${json.area}`);
         setPhase("ready");
       })
       .catch(() => {
@@ -65,8 +55,6 @@ export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
         }),
       });
       if (res.ok) {
-        // Say thanks, then hand the user to the page that recomputes the
-        // average from the fact we just wrote.
         setPhase("done");
         setTimeout(() => router.push(`/restaurant/${restaurantId}`), 900);
         return;
@@ -83,7 +71,7 @@ export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
 
   if (phase === "notfound") {
     return (
-      <main className="mx-auto flex min-h-[80vh] max-w-[560px] flex-col justify-center px-6">
+      <main className="mx-auto flex min-h-[80vh] max-w-[560px] flex-col justify-center px-5">
         <p className="text-lg text-muted">Restaurant not found.</p>
         <Link
           href="/"
@@ -97,9 +85,11 @@ export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
 
   if (phase === "done") {
     return (
-      <main className="mx-auto flex min-h-screen max-w-[560px] flex-col items-center justify-center px-6 text-center">
-        <Star className="h-8 w-8 text-accent" />
-        <p className="mt-4 text-2xl font-semibold tracking-tight">Thank you.</p>
+      <main className="mx-auto flex min-h-screen max-w-[560px] flex-col items-center justify-center px-5 text-center">
+        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-badge text-2xl text-white">
+          &#10003;
+        </span>
+        <p className="mt-5 text-2xl font-bold tracking-tight">Thank you.</p>
         <p className="mt-3 max-w-[36ch] text-sm text-muted">
           Your review is saved. The ratings are recalculated from facts, every time
           &mdash; without anyone keeping a score.
@@ -110,11 +100,9 @@ export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
 
   if (phase === "loading") {
     return (
-      <main className="mx-auto min-h-screen max-w-[560px] px-6 py-16 sm:py-24" aria-hidden="true">
-        <div className="h-9 w-1/2 animate-pulse rounded-md bg-border" />
-        <div className="mt-3 h-4 w-1/3 animate-pulse rounded-md bg-border" />
-        <div className="mt-12 h-10 w-40 animate-pulse rounded-md bg-border" />
-        <div className="mt-8 h-24 animate-pulse rounded-md bg-border" />
+      <main className="mx-auto min-h-screen max-w-[560px] px-5 pt-5" aria-hidden="true">
+        <div className="h-10 animate-pulse rounded-2xl bg-border" />
+        <div className="mt-6 h-80 animate-pulse rounded-2xl bg-card" />
       </main>
     );
   }
@@ -123,23 +111,16 @@ export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
   const shown = hoverRating || rating;
 
   return (
-    <main className="mx-auto min-h-screen max-w-[560px] px-6 pb-24 pt-12 sm:pt-20">
-      <Link
-        href={`/restaurant/${restaurantId}`}
-        className="text-sm text-muted transition-colors hover:text-accent"
-      >
-        &larr; Back to restaurant
-      </Link>
+    <main className="mx-auto min-h-screen max-w-[560px] px-5 pb-16 pt-6">
+      <section className="rounded-2xl border border-border bg-card p-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+          Writing a review for
+        </p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight">{restaurantName}</h1>
 
-      <h1 className="mt-8 text-3xl font-semibold tracking-tight">{restaurantName}</h1>
-      <p className="mt-2 text-sm text-muted">{subTitle}</p>
-
-      <form onSubmit={handleSubmit} className="mt-10">
-        <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-widest text-accent">
-            Your rating
-          </legend>
-          <div className="mt-3 flex gap-1" onMouseLeave={() => setHoverRating(0)}>
+        <form onSubmit={handleSubmit} className="mt-8">
+          <h2 className="text-sm font-semibold">Rate it</h2>
+          <div className="mt-3 flex gap-2" onMouseLeave={() => setHoverRating(0)}>
             {[1, 2, 3, 4, 5].map((value) => (
               <button
                 key={value}
@@ -147,51 +128,64 @@ export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
                 aria-label={`${value} star${value > 1 ? "s" : ""}`}
                 onClick={() => setRating(value)}
                 onMouseEnter={() => setHoverRating(value)}
-                className={`p-1.5 transition-all ${
-                  value <= shown
-                    ? "text-accent scale-110"
-                    : "text-accent/25 hover:text-muted"
-                }`}
+                className={
+                  "flex h-16 flex-1 items-center justify-center rounded-xl border transition-all " +
+                  (value <= shown
+                    ? "border-accent bg-accent text-white scale-[1.03]"
+                    : "border-border text-muted hover:border-muted hover:text-foreground")
+                }
               >
-                <Star className="h-8 w-8" />
+                <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true" fill="currentColor">
+                  <path d="M12 2.5c.3 0 .6.2.75.5l2.55 5.15 5.7.83c.7.1.98.96.47 1.46l-4.12 4.02.97 5.68c.12.7-.61 1.23-1.24.9L12 18.43l-5.08 2.61c-.63.33-1.36-.2-1.24-.9l.97-5.68-4.12-4.02c-.51-.5-.23-1.36.47-1.46l5.7-.83L11.25 3c.15-.3.45-.5.75-.5Z" />
+                </svg>
               </button>
             ))}
           </div>
-          <p className="mt-1.5 h-5 text-sm text-muted" aria-live="polite">
-            {rating > 0 ? `You picked ${rating} of 5` : "Pick a star to begin"}
+          <p className="mt-2 h-5 text-xs text-muted" aria-live="polite">
+            {rating > 0 ? `You picked ${rating} of 5` : "Pick a box to rate"}
           </p>
-        </fieldset>
 
-        <label
-          htmlFor="comment"
-          className="mt-6 block text-xs font-medium uppercase tracking-widest text-accent"
-        >
-          Your review
-        </label>
-        <textarea
-          id="comment"
-          rows={4}
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder="What was it like? Keep it honest, keep it short."
-          className="mt-3 w-full resize-none rounded-lg border border-border bg-card p-4 leading-relaxed placeholder:text-muted/60 focus:border-accent focus:outline-none"
-        />
-
-        {error && (
-          <p className="mt-4 rounded-lg border border-accent/30 bg-accent/5 p-3 text-sm text-accent">
-            {error}
+          <label htmlFor="comment" className="mt-6 block text-sm font-semibold">
+            Your review
+          </label>
+          <textarea
+            id="comment"
+            rows={5}
+            maxLength={MAX_COMMENT}
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="How was the food, the service, the vibe?"
+            className="mt-3 w-full resize-none rounded-xl border border-border bg-background p-4 leading-relaxed placeholder:text-muted/70 focus:border-accent focus:outline-none"
+          />
+          <p className="mt-1 text-right text-xs text-muted">
+            {comment.length}/{MAX_COMMENT}
           </p>
-        )}
 
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          title={canSubmit ? undefined : "Pick a rating and write something first"}
-          className="mt-8 w-full rounded-md bg-accent py-3.5 text-sm font-medium text-white transition-all hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-25 sm:w-auto sm:px-10"
-        >
-          {phase === "submitting" ? "Submitting\u2026" : "Submit review"}
-        </button>
-      </form>
+          {error && (
+            <p className="mt-3 rounded-xl border border-accent/30 bg-accent/5 p-3 text-sm text-accent">
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            title={canSubmit ? undefined : "Pick a rating and write something first"}
+            className={
+              "mt-5 w-full rounded-xl py-3.5 text-sm font-bold transition-all " +
+              (canSubmit
+                ? "bg-accent text-white hover:bg-accent-deep"
+                : "bg-border text-muted")
+            }
+          >
+            {phase === "submitting" ? "Submitting\u2026" : "Submit Review"}
+          </button>
+        </form>
+      </section>
+
+      <p className="mt-6 text-center text-xs text-muted">
+        Your review is public and cannot be edited or deleted.
+      </p>
     </main>
   );
 }
