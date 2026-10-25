@@ -10,6 +10,7 @@
   --accent: #dc2626;
   --accent-deep: #ef4444;
   --badge: #16a34a;
+  --warn: #ca8a04;
 }
 
 /* Day mode — same five layers, inverted. */
@@ -22,6 +23,7 @@
   --accent: #dc2626;
   --accent-deep: #b91c1c;
   --badge: #16a34a;
+  --warn: #ca8a04;
 }
 
 @theme inline {
@@ -33,6 +35,7 @@
   --color-accent: var(--accent);
   --color-accent-deep: var(--accent-deep);
   --color-badge: var(--badge);
+  --color-warn: var(--warn);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

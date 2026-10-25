@@ -66,13 +66,22 @@ function Skeleton() {
   );
 }
 
+/* The traffic-light rule for ratings — defined here, exactly once.
+   Product spec: 1-2 red, 3 yellow, 4-5 green. */
+function ratingTone(value: number | null) {
+  if (value == null) return "bg-badge"; // unused: null badges render nothing
+  if (value >= 4) return "bg-badge";    // green
+  if (value >= 3) return "bg-warn";     // yellow
+  return "bg-accent";                   // red
+}
+
 function RatingSquare({ value, size = "md" }: { value: number | null; size?: "md" | "lg" }) {
   if (value == null) return null; // no facts yet -> nothing to average -> no badge
   const box = size === "lg" ? "h-20 w-20 rounded-2xl" : "h-11 w-11 rounded-lg";
   const text = size === "lg" ? "text-2xl" : "text-lg";
   return (
     <span
-      className={`flex ${box} shrink-0 flex-col items-center justify-center bg-badge text-white`}
+      className={`flex ${box} shrink-0 flex-col items-center justify-center text-white ${ratingTone(value)}`}
       aria-label={`Rated ${value} out of 5`}
     >
       <span className={`${text} font-bold leading-none`}>{value}</span>
@@ -173,7 +182,8 @@ export default function RestaurantView({ id }: { id: string }) {
 
       {hasReviews ? (
         <>
-          {/* Latest review, flagged like the reference */}
+          {/* Latest review, flagged like the reference. The marker + pill adopt
+              the latest review's traffic-light tone. */}
           {data.latestReview && (
             <>
               <h2 className="mt-9 text-xs font-semibold uppercase tracking-[0.14em] text-muted">
@@ -181,12 +191,12 @@ export default function RestaurantView({ id }: { id: string }) {
               </h2>
               <section className="relative mt-4 rounded-2xl border border-border bg-card p-5">
                 <span
-                  className="absolute -top-2.5 left-6 rounded-full bg-badge px-3 py-1 text-[10px] font-bold tracking-widest text-white"
+                  className={`absolute -top-2.5 left-6 rounded-full px-3 py-1 text-[10px] font-bold tracking-widest text-white ${ratingTone(data.latestReview.rating)}`}
                   aria-hidden="true"
                 >
                   LATEST
                 </span>
-                <span className="absolute left-0 top-6 bottom-6 w-[3px] rounded-full bg-badge" aria-hidden="true" />
+                <span className={`absolute left-0 top-6 bottom-6 w-[3px] rounded-full ${ratingTone(data.latestReview.rating)}`} aria-hidden="true" />
                 <div className="flex items-start justify-between">
                   <RatingSquare value={data.latestReview.rating} />
                   <span className="text-xs text-muted">{timeAgo(data.latestReview.createdAt)}</span>

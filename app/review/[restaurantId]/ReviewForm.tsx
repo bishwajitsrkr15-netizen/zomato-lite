@@ -8,6 +8,14 @@ type Phase = "loading" | "notfound" | "ready" | "submitting" | "done";
 
 const MAX_COMMENT = 500;
 
+/* Same traffic-light rule the restaurant screen uses. Kept in sync on purpose
+   (two tiny screens, one rule — the day it changes, both change). */
+function ratingTone(value: number) {
+  if (value >= 4) return "bg-badge";
+  if (value >= 3) return "bg-warn";
+  return "bg-accent";
+}
+
 export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("loading");
@@ -131,7 +139,7 @@ export default function ReviewForm({ restaurantId }: { restaurantId: string }) {
                 className={
                   "flex h-16 flex-1 items-center justify-center rounded-xl border transition-all " +
                   (value <= shown
-                    ? "border-accent bg-accent text-white scale-[1.03]"
+                    ? `border-transparent text-white scale-[1.03] ${ratingTone(value)}`
                     : "border-border text-muted hover:border-muted hover:text-foreground")
                 }
               >
