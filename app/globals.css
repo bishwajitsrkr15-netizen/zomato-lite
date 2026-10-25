@@ -26,3 +26,8 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
+
+::selection {
+  background: var(--accent);
+  color: #ffffff;
+}

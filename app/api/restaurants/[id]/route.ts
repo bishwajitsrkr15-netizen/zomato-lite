@@ -14,6 +14,9 @@ import { sql } from "@/lib/db";
 
 type ReviewRow = { id: number; rating: number; comment: string; created_at: Date };
 
+// Always computed at request time: an average is an answer, not a cached asset.
+export const dynamic = "force-dynamic";
+
 export function toReview(row: ReviewRow) {
   return {
     id: Number(row.id),

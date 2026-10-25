@@ -28,12 +28,25 @@ function formatDate(iso: string) {
   });
 }
 
-function Stars({ value }: { value: number }) {
+/* Rendering only: filled/empty star glyphs for a 1-5 value. Not a calculation. */
+function Stars({ value, className = "" }: { value: number; className?: string }) {
   return (
-    <span className="text-accent" aria-label={`${value} out of 5`}>
-      {"\u2605".repeat(value)}
-      <span className="text-muted">{"\u2605".repeat(5 - value)}</span>
+    <span className={className} aria-label={`${value} out of 5`}>
+      <span className="text-accent">{"\u2605".repeat(value)}</span>
+      <span className="text-accent/25">{"\u2605".repeat(5 - value)}</span>
     </span>
+  );
+}
+
+function Skeleton() {
+  return (
+    <main className="mx-auto min-h-screen max-w-[560px] px-6 py-16 sm:py-24" aria-hidden="true">
+      <div className="h-9 w-2/3 animate-pulse rounded-md bg-border" />
+      <div className="mt-3 h-4 w-1/3 animate-pulse rounded-md bg-border" />
+      <div className="mt-12 h-16 w-24 animate-pulse rounded-md bg-border" />
+      <div className="mt-10 h-32 animate-pulse rounded-lg bg-border" />
+      <div className="mt-4 h-16 animate-pulse rounded-lg bg-border" />
+    </main>
   );
 }
 
@@ -41,13 +54,15 @@ export default function RestaurantView({ id }: { id: string }) {
   const [data, setData] = useState<RestaurantData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // One call, one shape. The API returns exactly what this screen shows:
-  // name -> big average -> latest review -> older list. No sorting, no maths.
+  // One call, one shape — the API response IS the screen's agenda:
+  // name -> big average -> latest review -> older list.
   useEffect(() => {
+    let cancelled = false;
     const fetchData = async () => {
       try {
         const res = await fetch(`/api/restaurants/${id}`);
         const json = await res.json();
+        if (cancelled) return;
         if (!res.ok) {
           setError(json.error ?? "Something went wrong");
           setData(null);
@@ -55,75 +70,89 @@ export default function RestaurantView({ id }: { id: string }) {
         }
         setData(json);
       } catch {
-        setError("Could not reach the server.");
+        if (!cancelled) setError("Could not reach the server.");
       }
     };
     fetchData();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   if (error) {
     return (
-      <main className="mx-auto max-w-[560px] px-6 py-24">
+      <main className="mx-auto flex min-h-[80vh] max-w-[560px] flex-col justify-center px-6">
         <p className="text-lg text-muted">{error}</p>
-        <Link href="/" className="mt-4 inline-block text-accent underline underline-offset-4">
+        <Link
+          href="/"
+          className="mt-4 inline-block w-fit text-accent underline underline-offset-4 hover:opacity-80"
+        >
           Go home
         </Link>
       </main>
     );
   }
 
-  if (!data) {
-    return (
-      <main className="mx-auto max-w-[560px] px-6 py-24">
-        <p className="text-lg text-muted">Loading…</p>
-      </main>
-    );
-  }
+  if (!data) return <Skeleton />;
 
   const hasReviews = data.totalReviews > 0;
 
   return (
-    <main className="mx-auto max-w-[560px] px-6 py-16 sm:py-24">
+    <main className="mx-auto min-h-screen max-w-[560px] px-6 pb-24 pt-12 sm:pt-20">
+      <Link href="/" className="text-sm text-muted transition-colors hover:text-foreground">
+        &larr; All restaurants
+      </Link>
+
       {/* 1. Name, with cuisine and area underneath in muted text */}
-      <h1 className="text-3xl font-semibold tracking-tight">{data.name}</h1>
-      <p className="mt-1 text-sm text-muted">Indian &middot; {data.area}</p>
+      <h1 className="mt-8 text-3xl font-semibold tracking-tight sm:text-4xl">{data.name}</h1>
+      <p className="mt-2 text-sm text-muted">{data.cuisine} &middot; {data.area}</p>
 
       {hasReviews ? (
         <>
-          {/* 2. Average rating — the biggest thing on the page. It is printed, not computed. */}
-          <div className="mt-10 flex items-baseline gap-3">
+          {/* 2. Average rating — the biggest thing on the page. Printed, not computed. */}
+          <div className="mt-10 flex items-baseline gap-1">
             {/* THE LINE: {data.averageRating} — the backend handed us 4.5 and we print 4.5. */}
-            <span className="text-6xl font-semibold tracking-tight">{data.averageRating}</span>
-            <span className="text-sm text-muted">
-              {data.totalReviews} review{data.totalReviews === 1 ? "" : "s"}
+            <span className="text-6xl font-semibold tracking-tight sm:text-7xl">
+              {data.averageRating}
             </span>
+            <span className="text-xl text-muted">/ 5</span>
+          </div>
+          <div className="mt-3 text-sm text-muted">
+            {data.totalReviews} review{data.totalReviews === 1 ? "" : "s"}
           </div>
 
           {/* 3. Latest review — visually set apart, because recency is what people trust */}
           {data.latestReview && (
-            <section className="mt-10 rounded-lg border-l-4 border-l-accent bg-card p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted">
+            <section className="mt-10 rounded-xl bg-card p-6">
+              <p className="text-xs font-medium uppercase tracking-widest text-muted">
                 Latest review
               </p>
-              <p className="mt-3 text-base leading-relaxed">{data.latestReview.comment}</p>
-              <p className="mt-3 text-xs text-muted">
-                <Stars value={data.latestReview.rating} /> &middot;{" "}
-                {formatDate(data.latestReview.createdAt)}
-              </p>
+              <p className="mt-4 text-lg leading-relaxed">{data.latestReview.comment}</p>
+              <div className="mt-4 flex items-center gap-2">
+                <Stars value={data.latestReview.rating} className="text-sm" />
+                <span className="text-xs text-muted">
+                  &middot; {formatDate(data.latestReview.createdAt)}
+                </span>
+              </div>
             </section>
           )}
 
           {/* 4. Older reviews, newest first, plain list */}
           {data.reviews.length > 0 && (
             <section className="mt-10">
-              <h2 className="text-sm font-medium text-muted">Older reviews</h2>
-              <ul className="mt-4 divide-y divide-border">
+              <h2 className="text-xs font-medium uppercase tracking-widest text-muted">
+                Older reviews
+              </h2>
+              <ul className="mt-2 divide-y divide-border">
                 {data.reviews.map((review) => (
-                  <li key={review.id} className="py-4">
-                    <p className="text-sm leading-relaxed">{review.comment}</p>
-                    <p className="mt-2 text-xs text-muted">
-                      <Stars value={review.rating} /> &middot; {formatDate(review.createdAt)}
-                    </p>
+                  <li key={review.id} className="py-5">
+                    <p className="leading-relaxed">{review.comment}</p>
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className="rounded-full border border-border px-2.5 py-1 text-xs text-muted">
+                        {review.rating} / 5
+                      </span>
+                      <span className="text-xs text-muted">{formatDate(review.createdAt)}</span>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -131,20 +160,30 @@ export default function RestaurantView({ id }: { id: string }) {
           )}
         </>
       ) : (
-        /* 6. Empty state — no facts yet, nothing to show, invite the first review */
-        <section className="mt-12 rounded-lg border border-border bg-card p-8 text-center">
+        /* 5. Empty state — no facts yet, nothing to render, invite the first review */
+        <section className="mt-12 rounded-xl border border-dashed border-border p-10 text-center">
           <p className="text-base font-medium">No reviews yet</p>
-          <p className="mt-2 text-sm text-muted">Be the first to review this restaurant.</p>
+          <p className="mx-auto mt-2 max-w-[32ch] text-sm text-muted">
+            This place is waiting for its first review. Yours would set the tone.
+          </p>
+          <Link
+            href={`/review/${id}`}
+            className="mt-6 inline-block rounded-md bg-accent px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
+          >
+            Write the first review
+          </Link>
         </section>
       )}
 
-      {/* 5. Link to the review form */}
-      <Link
-        href={`/review/${id}`}
-        className="mt-12 inline-block rounded-md bg-accent px-6 py-3 text-sm font-medium text-white hover:opacity-90"
-      >
-        Write a review
-      </Link>
+      {/* 6. Closing call-to-action (hidden in the empty state, which has its own) */}
+      {hasReviews && (
+        <Link
+          href={`/review/${id}`}
+          className="mt-12 inline-block rounded-md bg-accent px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
+        >
+          Write a review
+        </Link>
+      )}
     </main>
   );
 }

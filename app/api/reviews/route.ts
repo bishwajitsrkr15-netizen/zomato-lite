@@ -9,6 +9,9 @@
 
 import { sql } from "@/lib/db";
 
+// Always computed at request time: an average is an answer, not a cached asset.
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
   let body: unknown;
   try {
